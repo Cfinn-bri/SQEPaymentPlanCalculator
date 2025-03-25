@@ -115,7 +115,7 @@ try:
 
         months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month)
         months_until_exam = max(months_until_exam, 0)
-        available_installments = list(range(1, months_until_exam + 2))  # +1 to include exam month
+        available_installments = list(range(1, min(12, months_until_exam + 1) + 1))  # +1 to include exam month
 
         st.markdown("""
         ### 📅 Course Details
