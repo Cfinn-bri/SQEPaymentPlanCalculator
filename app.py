@@ -27,9 +27,8 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
         payment_schedule.append(("+£149 Late Fee", 149))
 
     for i in range(num_payments):
-        payment_date = first_payment_date + relativedelta(months=i)
-        if i == num_payments - 1:
-            payment_date = final_payment_date
+        months_from_end = num_payments - 1 - i
+        payment_date = final_payment_date - relativedelta(months=months_from_end)
         payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment + finance_fee_split))
 
     return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment
