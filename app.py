@@ -9,17 +9,25 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     finance_fee = 149
     late_fee = 149 if course_started else 0
-    downpayment = 499 if course_started else 199
-    remaining_balance = total_cost - downpayment + finance_fee + late_fee
 
-    monthly_payment = round(remaining_balance / num_payments, 2) if num_payments > 1 else remaining_balance
+    # Downpayment is 500 starting from 1st of the course start month
+    downpayment_cutoff = datetime(course_start_date.year, course_start_date.month, 1)
+    downpayment = 499 if datetime.today() >= downpayment_cutoff else 199
+
+    # Push final payment to 1st of exam month
+    final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
+    months_between = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)
+    num_payments = min(num_payments, months_between + 1)
+
+    remaining_balance = total_cost - downpayment + late_fee
+    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2) if num_payments > 1 else remaining_balance + finance_fee
     payment_schedule = [("Immediate Downpayment", downpayment)]
     if course_started:
         payment_schedule.append(("+£149 Late Fee", 149))
 
     for i in range(num_payments):
         payment_date = first_payment_date + relativedelta(months=i)
-        if payment_date > course_end_date:
+        if payment_date > final_payment_date:
             break
         payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment))
 
@@ -49,7 +57,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📘 Payment Plan Calculator")
+st.title("🧮 Payment Plan Calculator")
 
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
@@ -72,7 +80,7 @@ try:
             "Complete SQE": df[df["product name"].str.contains("Complete SQE", case=False, na=False)]
         }
 
-        selected_category = st.selectbox("Select a Category", list(categories.keys()))
+        selected_category = st.selectbox("Select Course Type", list(categories.keys()))
         filtered_df = categories[selected_category]
 
         search_term = st.text_input("🔍 Filter Courses (optional):").strip().lower()
@@ -107,7 +115,7 @@ try:
 
         months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month)
         months_until_exam = max(months_until_exam, 0)
-        available_installments = list(range(1, months_until_exam + 2))
+        available_installments = list(range(1, months_until_exam + 1))
 
         st.markdown("""
         ### 📅 Course Details
