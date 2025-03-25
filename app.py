@@ -20,16 +20,17 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
     num_payments = min(num_payments, months_between + 1)
 
     remaining_balance = total_cost - downpayment + late_fee
-    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2) if num_payments > 1 else remaining_balance + finance_fee
+    monthly_payment = round(remaining_balance / num_payments, 2) if num_payments > 1 else remaining_balance
+    finance_fee_split = round(finance_fee / num_payments, 2) if num_payments > 1 else finance_fee
     payment_schedule = [("Immediate Downpayment", downpayment)]
     if course_started:
         payment_schedule.append(("+£149 Late Fee", 149))
 
     for i in range(num_payments):
         payment_date = first_payment_date + relativedelta(months=i)
-        if payment_date > final_payment_date:
-            break
-        payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment))
+        if i == num_payments - 1:
+            payment_date = final_payment_date
+        payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment + finance_fee_split))
 
     return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment
 
