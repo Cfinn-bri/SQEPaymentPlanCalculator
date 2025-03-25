@@ -146,7 +146,7 @@ try:
                 st.info(f"**Finance Fee:** £{finance_fee:.2f}")
                 if late_fee:
                     st.warning(f"**Late Fee:** £{late_fee:.2f}")
-                st.write(f"**Monthly Payment:** £{monthly_payment:.2f} × {num_payments} months")
+                st.write(f"**Monthly Payment:** £{monthly_payment + (finance_fee / num_payments):.2f} × {num_payments} months")
                 st.write(f"**Total Paid:** £{total_paid:.2f}")
 
                 st.markdown("""
