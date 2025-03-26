@@ -3,19 +3,21 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started):
+def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started, course_start_date):
     first_payment_date = datetime.strptime(first_payment_date_str, "%d-%m-%Y")
     course_end_date = datetime.strptime(course_end_date_str, "%d-%m-%Y")
     course_end_month = datetime(course_end_date.year, course_end_date.month, 1)
 
     finance_fee = 149
-    late_fee = 149 if course_started else 0
-    downpayment = 499 if course_started else 199
-    remaining_balance = total_cost - downpayment + finance_fee + late_fee
+    course_start_month = datetime(course_start_date.year, course_start_date.month, 1)
+    downpayment = 500 if datetime.today() >= course_start_month else 199
+    late_fee = 149 if datetime.today() > course_start_date else 0
 
-    monthly_payment = round(remaining_balance / num_payments, 2) if num_payments > 1 else remaining_balance
+    remaining_balance = total_cost - downpayment + late_fee
+    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2) if num_payments > 1 else (remaining_balance + finance_fee)
+
     payment_schedule = [("Immediate Downpayment", downpayment)]
-    if course_started:
+    if late_fee:
         payment_schedule.append(("+£149 Late Fee", 149))
 
     for i in range(num_payments):
@@ -100,7 +102,6 @@ try:
                 total_cost -= (percent_off / 100.0) * total_cost
 
         first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
-        downpayment_is_499 = today >= datetime.combine(course_start_date, datetime.min.time())
         course_started = today > datetime.combine(course_start_date, datetime.min.time())
 
         earliest_allowed_payment = course_end_month - relativedelta(months=11)
@@ -128,16 +129,17 @@ try:
                     course_end_date.strftime("%d-%m-%Y"),
                     total_cost,
                     num_payments,
-                    downpayment_is_499
+                    course_started,
+                    course_start_date
                 )
 
-                total_paid = downpayment + finance_fee + late_fee + (monthly_payment * num_payments)
+                total_paid = downpayment + late_fee + (monthly_payment * num_payments)
 
                 st.markdown("""
                 ### 💡 Summary
                 """)
                 st.success(f"**Downpayment:** £{downpayment:.2f}")
-                st.info(f"**Finance Fee:** £{finance_fee:.2f}")
+                st.info(f"**Finance Fee (included in monthly payments):** £{finance_fee:.2f}")
                 if late_fee:
                     st.warning(f"**Late Fee:** £{late_fee:.2f}")
                 st.write(f"**Monthly Payment:** £{monthly_payment:.2f} × {num_payments} months")
