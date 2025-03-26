@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started):
     first_payment_date = datetime.strptime(first_payment_date_str, "%d-%m-%Y")
     course_end_date = datetime.strptime(course_end_date_str, "%d-%m-%Y")
+    course_end_month = datetime(course_end_date.year, course_end_date.month, 1)
 
     finance_fee = 149
     late_fee = 149 if course_started else 0
@@ -19,7 +20,7 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     for i in range(num_payments):
         payment_date = first_payment_date + relativedelta(months=i)
-        if payment_date > course_end_date.replace(day=1):
+        if payment_date > course_end_month:
             break
         payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment))
 
@@ -83,6 +84,7 @@ try:
 
         course_start_date = pd.to_datetime(course_data["course start date"], dayfirst=True)
         course_end_date = pd.to_datetime(course_data["course end date"], dayfirst=True)
+        course_end_month = datetime(course_end_date.year, course_end_date.month, 1)
         enrollment_deadline = pd.to_datetime(course_data["ecommerce enrollment deadline"], dayfirst=True)
         total_cost = float(course_data["tuition pricing"])
 
@@ -101,13 +103,12 @@ try:
         downpayment_is_499 = today >= datetime.combine(course_start_date, datetime.min.time())
         course_started = today > datetime.combine(course_start_date, datetime.min.time())
 
-        earliest_allowed_payment = course_end_date - relativedelta(months=12)
+        earliest_allowed_payment = course_end_month - relativedelta(months=11)
         if first_payment_date < earliest_allowed_payment:
             first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
 
-        # Clamp the maximum number of installments to 12
-        months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
-        months_until_exam = max(min(months_until_exam, 12), 0)
+        months_until_exam = (course_end_month.year - first_payment_date.year) * 12 + (course_end_month.month - first_payment_date.month)
+        months_until_exam = max(min(months_until_exam + 1, 12), 0)
         available_installments = list(range(1, months_until_exam + 1))
 
         st.markdown("""
