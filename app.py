@@ -77,7 +77,7 @@ try:
 
     if all(col in df.columns for col in ["product name", "course start date", "course end date", "tuition pricing", "ecommerce enrollment deadline"]):
         today = datetime.today()
-        df = df[pd.to_datetime(df["ecommerce enrollment deadline"], errors='coerce', dayfirst=True) >= today]
+        df = df[pd.to_datetime(df["ecommerce enrollment deadline"], errors='coerce', dayfirst=True) >= (today - relativedelta(weeks=2))]
 
         categories = {
             "All Courses": pd.concat([
@@ -115,15 +115,15 @@ try:
                 percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0, key="percent_off")
                 total_cost -= (percent_off / 100.0) * total_cost
 
-        first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
-        downpayment_is_499 = today >= datetime.combine(course_start_date, datetime.min.time())
-        course_started = today > datetime.combine(course_start_date, datetime.min.time())
+        first_possible_payment = datetime(course_start_date.year, course_start_date.month, 1)
+        if today > first_possible_payment:
+            first_possible_payment = first_possible_payment + relativedelta(months=1)
 
-        earliest_allowed_payment = course_end_date - relativedelta(months=12)
-        if first_payment_date < earliest_allowed_payment:
-            first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
+        first_payment_date = first_possible_payment
 
-        months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month)
+        final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
+
+        months_until_exam = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)(course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month)
         months_until_exam = max(months_until_exam, 0)
         available_installments = list(range(1, min(12, months_until_exam + 1) + 1))  # +1 to include exam month
 
