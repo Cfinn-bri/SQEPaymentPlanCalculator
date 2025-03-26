@@ -149,7 +149,7 @@ try:
 
     if all(col in df.columns for col in ["product name", "course start date", "course end date", "tuition pricing", "ecommerce enrollment deadline"]):
         today = datetime.today()
-        df = df[pd.to_datetime(df["ecommerce enrollment deadline"], errors='coerce', dayfirst=True) >= today]
+        df = df[pd.to_datetime(df["ecommerce enrollment deadline"], errors='coerce', dayfirst=True) >= today - pd.Timedelta(days=14)]
 
         categories = {
             "All Courses": pd.concat([
