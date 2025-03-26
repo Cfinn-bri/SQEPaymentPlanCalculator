@@ -115,9 +115,7 @@ try:
                 percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0, key="percent_off")
                 total_cost -= (percent_off / 100.0) * total_cost
 
-        first_possible_payment = datetime(today.year, today.month, 1) + relativedelta(months=1)
-        if first_possible_payment < datetime(course_start_date.year, course_start_date.month, 1):
-            first_possible_payment = datetime(course_start_date.year, course_start_date.month, 1)
+        first_possible_payment = datetime(course_end_date.year, course_end_date.month, 1) - relativedelta(months=12)
 
         first_payment_date = first_possible_payment
 
