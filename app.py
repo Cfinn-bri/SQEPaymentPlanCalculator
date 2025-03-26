@@ -17,9 +17,13 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
     # Flexible logic for "Complete SQE Prep Flexible"
     is_flexible = "complete sqe prep flexible" in course_name.lower()
     if is_flexible:
-        final_payment_date = None  # flexible plans do not push final payment to exam month
-        first_payment_date = datetime(course_start_date.year, course_start_date.month, 1)
-        num_payments = min(num_payments, 12)
+        exam_month = datetime(course_end_date.year, course_end_date.month, 1)
+        enrollment_buffer = course_end_date + relativedelta(weeks=2)
+        final_payment_date = exam_month
+        next_month_start = datetime.today().replace(day=1) + relativedelta(months=1)
+        first_payment_date = max(next_month_start, datetime(course_start_date.year, course_start_date.month, 1))
+        months_between = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)
+        num_payments = min(num_payments, months_between + 1, 12)
     else:
         final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
         months_between = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)
