@@ -47,6 +47,13 @@ st.markdown("""
         padding: 0.3rem 0;
         border-bottom: 1px solid #eee;
     }
+    .info-popup {
+        background-color: #f1f1f1;
+        border: 1px solid #ccc;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
     html[data-theme="dark"] .stApp {
         --background-color: #0e1117;
         --card-bg-color: #1e1e1e;
@@ -55,6 +62,30 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📘 Payment Plan Calculator")
+
+with st.expander("ℹ️ Fee & Cohort Info"):
+    st.markdown("""
+    <div class="info-popup">
+    <strong>Late Fee:</strong> £149 (Added after start date)<br>
+    <strong>Finance Fee:</strong> £149 (Always included and calculated into schedule)<br>
+    <strong>Down-payment:</strong> £199 but becomes £500 on the 1st of Course Start Month
+    <hr>
+    <strong>What do the year-numbers mean at the end of product names?</strong><br>
+    <em>YEAR-COHORT</em>
+    <ul>
+        <li><strong>SQE1</strong><br>
+        2026-1 = Exam in January 2026<br>
+        2026-2 = Exam in July 2026</li>
+        <li><strong>SQE2</strong><br>
+        2026-1 = Exam in January 2026<br>
+        2026-2 = Exam in April 2026<br>
+        2026-3 = Exam in July 2026<br>
+        2026-4 = Exam in October 2026</li>
+        <li><strong>Complete Packages</strong><br>
+        These run off the SQE1 dates, even though they will run later into SQE2. This is due to a technical reason with the PSP.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
