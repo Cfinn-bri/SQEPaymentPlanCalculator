@@ -118,7 +118,7 @@ try:
         exam_month = datetime(course_end_date.year, course_end_date.month, 1)
         twelve_months_prior = exam_month - relativedelta(months=12)
         next_month_start = datetime(today.year, today.month, 1) + relativedelta(months=1)
-        first_possible_payment = max(twelve_months_prior, next_month_start)
+        first_possible_payment = next_month_start
 
         first_payment_date = first_possible_payment
 
