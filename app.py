@@ -33,26 +33,43 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 st.set_page_config(page_title="Payment Plan Calculator", layout="centered")
 st.markdown("""
     <style>
+    body {
+        background-color: #f0f4f8;
+    }
     .stApp {
         font-family: 'Segoe UI', sans-serif;
-        background-color: var(--background-color, #f9f9f9);
+        background-color: var(--background-color, #f0f4f8);
     }
     .block-container {
         padding: 2rem;
-        background-color: var(--card-bg-color, #ffffff);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
     .payment-line {
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #eee;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 1.05rem;
     }
     .info-popup {
         background-color: #fff8e6;
         border: 2px solid #ffb300;
         padding: 1.2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(255, 179, 0, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 6px 16px rgba(255, 179, 0, 0.25);
+        font-size: 0.95rem;
+    }
+    .stButton > button {
+        background-color: #0066cc;
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        font-weight: bold;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+    .stButton > button:hover {
+        background-color: #004c99;
     }
     html[data-theme="dark"] .stApp {
         --background-color: #0e1117;
