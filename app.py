@@ -19,7 +19,7 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     for i in range(num_payments):
         payment_date = first_payment_date + relativedelta(months=i)
-        if payment_date > course_end_date:
+        if payment_date > course_end_date.replace(day=1):
             break
         payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment))
 
@@ -49,7 +49,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📘 Payment Plan Calculator")
+st.title("\ud83d\udcd8 Payment Plan Calculator")
 
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
@@ -75,7 +75,7 @@ try:
         selected_category = st.selectbox("Select a Category", list(categories.keys()))
         filtered_df = categories[selected_category]
 
-        search_term = st.text_input("🔍 Filter Courses (optional):").strip().lower()
+        search_term = st.text_input("\ud83d\udd0d Filter Courses (optional):").strip().lower()
         filtered_courses = filtered_df[filtered_df["product name"].str.lower().str.contains(search_term)] if search_term else filtered_df
 
         course_name = st.selectbox("Select a Course", filtered_courses["product name"].unique())
@@ -105,22 +105,22 @@ try:
         if first_payment_date < earliest_allowed_payment:
             first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
 
-        months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month)
+        months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
         months_until_exam = max(months_until_exam, 0)
         available_installments = list(range(1, months_until_exam + 1))
 
         st.markdown("""
-        ### 📅 Course Details
+        ### \ud83d\uddd3 Course Details
         """)
         st.write(f"**Start Date:** {course_start_date.strftime('%-d %B %Y')}")
-        st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')}")
+        st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')} (final payment can be on 1st of this month)")
         st.write(f"**Enrollment Deadline:** {enrollment_deadline.strftime('%-d %B %Y')}")
         st.write(f"**Tuition Pricing:** £{total_cost:.2f}")
 
         if available_installments:
             num_payments = st.selectbox("Select Number of Installments", available_installments)
 
-            if st.button("📊 Calculate Payment Plan"):
+            if st.button("\ud83d\udcca Calculate Payment Plan"):
                 payment_plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
                     first_payment_date.strftime("%d-%m-%Y"),
                     course_end_date.strftime("%d-%m-%Y"),
@@ -132,7 +132,7 @@ try:
                 total_paid = downpayment + finance_fee + late_fee + (monthly_payment * num_payments)
 
                 st.markdown("""
-                ### 💡 Summary
+                ### \ud83d\udca1 Summary
                 """)
                 st.success(f"**Downpayment:** £{downpayment:.2f}")
                 st.info(f"**Finance Fee:** £{finance_fee:.2f}")
@@ -142,7 +142,7 @@ try:
                 st.write(f"**Total Paid:** £{total_paid:.2f}")
 
                 st.markdown("""
-                ### 📅 Payment Schedule
+                ### \ud83d\uddd3 Payment Schedule
                 <div class='payment-schedule'>
                 """, unsafe_allow_html=True)
 
