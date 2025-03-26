@@ -105,8 +105,9 @@ try:
         if first_payment_date < earliest_allowed_payment:
             first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
 
+        # Clamp the maximum number of installments to 12
         months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
-        months_until_exam = max(months_until_exam, 0)
+        months_until_exam = max(min(months_until_exam, 12), 0)
         available_installments = list(range(1, months_until_exam + 1))
 
         st.markdown("""
