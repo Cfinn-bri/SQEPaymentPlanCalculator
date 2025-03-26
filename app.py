@@ -14,10 +14,16 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
     downpayment_cutoff = datetime(course_start_date.year, course_start_date.month, 1)
     downpayment = 500 if datetime.today() >= downpayment_cutoff else 199
 
-    # Push final payment to 1st of exam month
-    final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
-    months_between = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)
-    num_payments = min(num_payments, months_between + 1)
+    # Flexible logic for "Complete SQE Prep Flexible"
+    is_flexible = "complete sqe prep flexible" in course_name.lower()
+    if is_flexible:
+        final_payment_date = None  # flexible plans do not push final payment to exam month
+        first_payment_date = datetime(course_start_date.year, course_start_date.month, 1)
+        num_payments = min(num_payments, 12)
+    else:
+        final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
+        months_between = (final_payment_date.year - first_payment_date.year) * 12 + (final_payment_date.month - first_payment_date.month)
+        num_payments = min(num_payments, months_between + 1)
 
     remaining_balance = total_cost - downpayment + late_fee
     monthly_payment = round(remaining_balance / num_payments, 2) if num_payments > 1 else remaining_balance
@@ -27,8 +33,12 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
         payment_schedule.append(("+£149 Late Fee", 149))
 
     for i in range(num_payments):
-        months_from_end = num_payments - 1 - i
-        payment_date = final_payment_date - relativedelta(months=months_from_end)
+        if is_flexible:
+            payment_date = first_payment_date + relativedelta(months=i)
+        else:
+            months_from_end = num_payments - 1 - i
+            payment_date = final_payment_date - relativedelta(months=months_from_end)
+
         payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment + finance_fee_split))
 
     return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment
