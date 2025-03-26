@@ -36,58 +36,81 @@ st.set_page_config(page_title="Payment Plan Calculator", layout="centered")
 
 st.markdown("""
     <style>
-    body {
-        background-color: #eef2f6;
-    }
-    .stApp {
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .block-container {
-        padding: 3rem;
-        background-color: #ffffff;
-        border-radius: 20px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
-        margin-top: 2rem;
-    }
-    .payment-line {
-        padding: 0.6rem 0;
-        border-bottom: 1px solid #d1d5db;
-        font-size: 1.1rem;
-    }
-    .info-popup {
-        background-color: #fff7ed;
-        border-left: 6px solid #f97316;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
-        font-size: 1rem;
-        line-height: 1.6;
-    }
-    .stButton > button {
-        background: linear-gradient(to right, #3b82f6, #2563eb);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 600;
-        border: none;
-        font-size: 1rem;
-        transition: background 0.3s ease, transform 0.2s ease;
-    }
-    .stButton > button:hover {
-        background: linear-gradient(to right, #2563eb, #1d4ed8);
-        transform: translateY(-1px);
-    }
-    h1, h2, h3, .markdown-text-container h3 {
-        color: #1e293b;
-        margin-bottom: 0.75rem;
-    }
-    html[data-theme="dark"] .block-container {
-        background-color: #1f2937;
-    }
-    html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3 {
-        color: #f3f4f6;
-    }
-    </style>
+body {
+    background-color: #eef2f6;
+}
+.stApp {
+    font-family: 'Segoe UI', sans-serif;
+}
+.block-container {
+    padding: 3rem;
+    background-color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+}
+.payment-line {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #d1d5db;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+.info-popup {
+    background-color: #fff7ed;
+    border-left: 6px solid #f97316;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #1e293b;
+}
+.stButton > button {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    font-size: 1rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+.stButton > button:hover {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+}
+h1, h2, h3, .markdown-text-container h3 {
+    color: #1e293b;
+    margin-bottom: 0.75rem;
+}
+
+/* 🌙 Dark Mode Enhancements */
+html[data-theme="dark"] .block-container {
+    background-color: #111827;
+    color: #f3f4f6;
+}
+html[data-theme="dark"] .payment-line {
+    border-bottom: 1px solid #374151;
+    color: #e5e7eb;
+}
+html[data-theme="dark"] .info-popup {
+    background-color: #1f2937;
+    border-left: 6px solid #fb923c;
+    color: #f9fafb;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+}
+html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3 {
+    color: #f3f4f6;
+}
+html[data-theme="dark"] .stButton > button {
+    background: linear-gradient(to right, #60a5fa, #3b82f6);
+    color: white;
+}
+html[data-theme="dark"] .stButton > button:hover {
+    background: linear-gradient(to right, #3b82f6, #2563eb);
+}
+</style>
+
 """, unsafe_allow_html=True)
 
 st.title("📘 Payment Plan Calculator")
