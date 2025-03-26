@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started):
+def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started, course_start_date, course_name):
     first_payment_date = datetime.strptime(first_payment_date_str, "%d-%m-%Y")
     course_end_date = datetime.strptime(course_end_date_str, "%d-%m-%Y")
 
@@ -144,7 +144,9 @@ try:
                     course_end_date.strftime("%d-%m-%Y"),
                     total_cost,
                     num_payments,
-                    downpayment_is_499
+                    datetime.today() > course_start_date,
+                    course_start_date,
+                    course_name
                 )
 
                 total_paid = downpayment + finance_fee + late_fee + (monthly_payment * num_payments)
