@@ -30,33 +30,62 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment
 
+# -------------------- Streamlit App UI --------------------
+
 st.set_page_config(page_title="Payment Plan Calculator", layout="centered")
+
 st.markdown("""
     <style>
+    body {
+        background-color: #eef2f6;
+    }
     .stApp {
         font-family: 'Segoe UI', sans-serif;
-        background-color: var(--background-color, #f9f9f9);
     }
     .block-container {
-        padding: 2rem;
-        background-color: var(--card-bg-color, #ffffff);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 3rem;
+        background-color: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
     }
     .payment-line {
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #eee;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #d1d5db;
+        font-size: 1.1rem;
     }
     .info-popup {
-        background-color: #f1f1f1;
-        border: 1px solid #ccc;
-        padding: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        background-color: #fff7ed;
+        border-left: 6px solid #f97316;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(249, 115, 22, 0.15);
+        font-size: 1rem;
+        line-height: 1.6;
     }
-    html[data-theme="dark"] .stApp {
-        --background-color: #0e1117;
-        --card-bg-color: #1e1e1e;
+    .stButton > button {
+        background: linear-gradient(to right, #3b82f6, #2563eb);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        font-size: 1rem;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(to right, #2563eb, #1d4ed8);
+        transform: translateY(-1px);
+    }
+    h1, h2, h3, .markdown-text-container h3 {
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+    html[data-theme="dark"] .block-container {
+        background-color: #1f2937;
+    }
+    html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3 {
+        color: #f3f4f6;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,6 +115,8 @@ with st.expander("ℹ️ Fee & Cohort Info"):
     </ul>
     </div>
     """, unsafe_allow_html=True)
+
+# -------------------- Load & Filter Courses --------------------
 
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
@@ -119,36 +150,32 @@ try:
 
         course_start_date = pd.to_datetime(course_data["course start date"], dayfirst=True)
         course_end_date = pd.to_datetime(course_data["course end date"], dayfirst=True)
-        course_end_month = datetime(course_end_date.year, course_end_date.month, 1)
         enrollment_deadline = pd.to_datetime(course_data["ecommerce enrollment deadline"], dayfirst=True)
         total_cost = float(course_data["tuition pricing"])
 
         apply_promo = st.checkbox("Do you have a promo code?")
         if apply_promo:
             promo_option = st.radio("Choose Discount Type:", ["Amount Off", "Percent Off"])
-            amount_off = percent_off = 0.0
             if promo_option == "Amount Off":
-                amount_off = st.number_input("Amount Off (£)", min_value=0.0, value=0.0, key="amount_off")
+                amount_off = st.number_input("Amount Off (£)", min_value=0.0, value=0.0)
                 total_cost -= amount_off
             elif promo_option == "Percent Off":
-                percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0, key="percent_off")
+                percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0)
                 total_cost -= (percent_off / 100.0) * total_cost
 
         first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
 
-        earliest_allowed_payment = course_end_month - relativedelta(months=11)
+        earliest_allowed_payment = course_end_date - relativedelta(months=11)
         if first_payment_date < earliest_allowed_payment:
             first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
 
-        months_until_exam = (course_end_month.year - first_payment_date.year) * 12 + (course_end_month.month - first_payment_date.month)
-        months_until_exam = max(min(months_until_exam + 1, 12), 0)
-        available_installments = list(range(1, months_until_exam + 1))
+        max_installments = 12
+        months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
+        available_installments = list(range(1, min(months_until_exam, max_installments) + 1))
 
-        st.markdown("""
-        ### 🗓 Course Details
-        """)
+        st.markdown("### 📅 Course Details")
         st.write(f"**Start Date:** {course_start_date.strftime('%-d %B %Y')}")
-        st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')} (final payment can be on 1st of this month)")
+        st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')}")
         st.write(f"**Enrollment Deadline:** {enrollment_deadline.strftime('%-d %B %Y')}")
         st.write(f"**Tuition Pricing:** £{total_cost:.2f}")
 
@@ -156,7 +183,7 @@ try:
             num_payments = st.selectbox("Select Number of Installments", available_installments)
 
             if st.button("📊 Calculate Payment Plan"):
-                payment_plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
+                plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
                     first_payment_date.strftime("%d-%m-%Y"),
                     course_end_date.strftime("%d-%m-%Y"),
                     total_cost,
@@ -166,29 +193,20 @@ try:
 
                 total_paid = downpayment + late_fee + (monthly_payment * num_payments)
 
-                st.markdown("""
-                ### 💡 Summary
-                """)
+                st.markdown("### 💡 Summary")
                 st.success(f"**Downpayment:** £{downpayment:.2f}")
-                st.info(f"**Finance Fee (included in monthly payments):** £{finance_fee:.2f}")
+                st.info(f"**Finance Fee (spread):** £{finance_fee:.2f}")
                 if late_fee:
                     st.warning(f"**Late Fee:** £{late_fee:.2f}")
                 st.write(f"**Monthly Payment:** £{monthly_payment:.2f} × {num_payments} months")
                 st.write(f"**Total Paid:** £{total_paid:.2f}")
 
-                st.markdown("""
-                ### 🗓 Payment Schedule
-                <div class='payment-schedule'>
-                """, unsafe_allow_html=True)
-
-                for date, amount in payment_plan:
+                st.markdown("### 📅 Payment Schedule")
+                for date, amount in plan:
                     st.markdown(f"<div class='payment-line'><strong>{date}:</strong> £{amount:.2f}</div>", unsafe_allow_html=True)
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
         else:
             st.warning("No available payment months before the exam month.")
     else:
-        st.error("Excel file must contain columns: Product Name, Course Start Date, Course End Date, Tuition Pricing, Ecommerce Enrollment Deadline")
+        st.error("Excel file must contain required columns.")
 except Exception as e:
-    st.error(f"Failed to load course data: {e}")
+    st.error(f"Error loading course data: {e}")
