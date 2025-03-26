@@ -12,7 +12,7 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     # Downpayment is 500 starting from 1st of the course start month
     downpayment_cutoff = datetime(course_start_date.year, course_start_date.month, 1)
-    downpayment = 499 if datetime.today() >= downpayment_cutoff else 199
+    downpayment = 500 if datetime.today() >= downpayment_cutoff else 199
 
     # Push final payment to 1st of exam month
     final_payment_date = datetime(course_end_date.year, course_end_date.month, 1)
