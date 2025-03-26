@@ -3,18 +3,20 @@ import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_started, course_start_date):
+def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_cost, num_payments, course_start_date):
     first_payment_date = datetime.strptime(first_payment_date_str, "%d-%m-%Y")
     course_end_date = datetime.strptime(course_end_date_str, "%d-%m-%Y")
     course_end_month = datetime(course_end_date.year, course_end_date.month, 1)
 
-    finance_fee = 149
+    today = datetime.today()
     course_start_month = datetime(course_start_date.year, course_start_date.month, 1)
-    downpayment = 500 if datetime.today() >= course_start_month else 199
-    late_fee = 149 if datetime.today() > course_start_date else 0
+
+    downpayment = 500 if today >= course_start_month else 199
+    late_fee = 149 if today > course_start_date else 0
+    finance_fee = 149
 
     remaining_balance = total_cost - downpayment + late_fee
-    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2) if num_payments > 1 else (remaining_balance + finance_fee)
+    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2)
 
     payment_schedule = [("Immediate Downpayment", downpayment)]
     if late_fee:
@@ -102,7 +104,6 @@ try:
                 total_cost -= (percent_off / 100.0) * total_cost
 
         first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
-        course_started = today > datetime.combine(course_start_date, datetime.min.time())
 
         earliest_allowed_payment = course_end_month - relativedelta(months=11)
         if first_payment_date < earliest_allowed_payment:
@@ -129,7 +130,6 @@ try:
                     course_end_date.strftime("%d-%m-%Y"),
                     total_cost,
                     num_payments,
-                    course_started,
                     course_start_date
                 )
 
