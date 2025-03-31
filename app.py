@@ -178,9 +178,21 @@ try:
 
     # Determine available installments
     if is_flexible:
-        months_since_deadline = max(0, (today.year - enrollment_deadline.year) * 12 + today.month - enrollment_deadline.month)
-        max_installments = max(1, 12 - months_since_deadline)
-        available_installments = list(range(1, max_installments + 1))
+    start_month = datetime(course_start_date.year, course_start_date.month, 1)
+    
+    # Determine first payment date based on rules
+    if today < start_month:
+        first_payment_date = start_month
+    else:
+        first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
+    
+    # Reduce months starting the month *after* enrollment deadline
+    penalty_start = datetime(enrollment_deadline.year, enrollment_deadline.month, 1) + relativedelta(months=1)
+    months_since = max(0, (today.year - penalty_start.year) * 12 + today.month - penalty_start.month)
+    max_installments = max(1, 12 - months_since)
+
+    available_installments = list(range(1, max_installments + 1))
+
     else:
         first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
         earliest_allowed_payment = course_end_date - relativedelta(months=11)
@@ -200,8 +212,14 @@ try:
 
         if st.button("📊 Calculate Payment Plan"):
             if is_flexible:
-                plan, downpayment, finance_fee, late_fee, monthly_payment, first_payment_date, _ = calculate_flexible_plan(
-                    today, course_start_date, enrollment_deadline, course_end_date, total_cost, num_payments
+                plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
+                first_payment_date.strftime("%d-%m-%Y"),
+                course_end_date.strftime("%d-%m-%Y"),
+                total_cost,
+                num_payments,
+                course_start_date
+                )
+
                 )
             else:
                 plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
