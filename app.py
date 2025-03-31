@@ -118,6 +118,14 @@ with st.expander("ℹ️ Fee & Cohort Info"):
 
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
+df["ecommerce enrollment deadline"] = pd.to_datetime(df["ecommerce enrollment deadline"], dayfirst=True, errors="coerce")
+df["course start date"] = pd.to_datetime(df["course start date"], dayfirst=True, errors="coerce")
+df["course end date"] = pd.to_datetime(df["course end date"], dayfirst=True, errors="coerce")
+
+# Drop rows where any critical date is missing
+df = df.dropna(subset=["course start date", "course end date", "ecommerce enrollment deadline"])
+
+
 try:
     df = pd.read_excel(EXCEL_URL, engine="openpyxl")
     df.columns = df.columns.str.strip().str.lower()
