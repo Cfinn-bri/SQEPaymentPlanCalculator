@@ -129,21 +129,31 @@ df = df.dropna(subset=["course start date", "course end date", "ecommerce enroll
 try:
     df = pd.read_excel(EXCEL_URL, engine="openpyxl")
     df.columns = df.columns.str.strip().str.lower()
-    today = datetime.today()
 
-    # Parse date columns
-    df["ecommerce enrollment deadline"] = pd.to_datetime(df["ecommerce enrollment deadline"], dayfirst=True, errors="coerce")
-    df["course start date"] = pd.to_datetime(df["course start date"], dayfirst=True)
-    df["course end date"] = pd.to_datetime(df["course end date"], dayfirst=True)
+    # Show columns in case of mismatch
+    st.write("Loaded columns:", df.columns.tolist())
 
-    # Keep courses for 2 weeks after enrollment deadline
-    df = df[df["ecommerce enrollment deadline"] >= today - pd.Timedelta(days=14)]
+    # Try multiple fallback names for the enrollment deadline column
+    deadline_col = None
+    for col in df.columns:
+        if "enrol" in col and "deadline" in col:
+            deadline_col = col
+            break
 
-    # Add (Recently Closed) label if needed
-    df["product name tagged"] = df.apply(
-        lambda row: f"{row['product name']} (Recently Closed)" if row["ecommerce enrollment deadline"] < today else row["product name"],
-        axis=1
-    )
+    if not deadline_col:
+        st.error("Could not find 'ecommerce enrollment deadline' column.")
+        st.stop()
+
+    # Standardise date parsing with error tolerance
+    df[deadline_col] = pd.to_datetime(df[deadline_col], dayfirst=True, errors="coerce")
+    df["course start date"] = pd.to_datetime(df["course start date"], dayfirst=True, errors="coerce")
+    df["course end date"] = pd.to_datetime(df["course end date"], dayfirst=True, errors="coerce")
+
+    # Drop rows with any missing required dates
+    df = df.dropna(subset=["course start date", "course end date", deadline_col])
+
+    # Rename column for consistency
+    df = df.rename(columns={deadline_col: "ecommerce enrollment deadline"})
 
     # Select course
     course_name = st.selectbox("Select a Course", df["product name tagged"].unique())
