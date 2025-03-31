@@ -30,34 +30,6 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
 
     return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment
 
-def calculate_flexible_plan(today, course_start_date, enrollment_deadline, course_end_date, total_cost, num_payments):
-    start_month = datetime(course_start_date.year, course_start_date.month, 1)
-    if today < start_month:
-        first_payment_date = start_month
-    else:
-        first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
-
-    months_since_deadline = max(0, (today.year - enrollment_deadline.year) * 12 + today.month - enrollment_deadline.month)
-    max_payments = max(1, 12 - months_since_deadline)
-    num_payments = min(num_payments, max_payments)
-
-    downpayment = 500
-    late_fee = 149 if today > course_start_date else 0
-    finance_fee = 149
-
-    remaining_balance = total_cost - downpayment + late_fee
-    monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2)
-
-    payment_schedule = [("Immediate Downpayment", downpayment)]
-    if late_fee:
-        payment_schedule.append(("+£149 Late Fee", 149))
-
-    for i in range(num_payments):
-        payment_date = first_payment_date + relativedelta(months=i)
-        payment_schedule.append((payment_date.strftime("%-d %B %Y"), monthly_payment))
-
-    return payment_schedule, downpayment, finance_fee, late_fee, monthly_payment, first_payment_date, max_payments
-
 st.set_page_config(page_title="Payment Plan Calculator", layout="centered")
 
 st.markdown("""
@@ -101,12 +73,17 @@ body { background-color: #eef2f6; }
     background: linear-gradient(to right, #2563eb, #1d4ed8);
     transform: translateY(-1px);
 }
-h1, h2, h3, .markdown-text-container h3 {
+h1, h2, h3 {
     color: #1e293b;
-    margin-bottom: 0.75rem;
 }
-html[data-theme="dark"] .block-container { background-color: #111827; color: #f3f4f6; }
-html[data-theme="dark"] .payment-line { border-bottom: 1px solid #374151; color: #e5e7eb; }
+html[data-theme="dark"] .block-container {
+    background-color: #111827;
+    color: #f3f4f6;
+}
+html[data-theme="dark"] .payment-line {
+    border-bottom: 1px solid #374151;
+    color: #e5e7eb;
+}
 html[data-theme="dark"] .info-popup {
     background-color: #1f2937;
     border-left: 6px solid #fb923c;
@@ -115,6 +92,7 @@ html[data-theme="dark"] .info-popup {
 }
 html[data-theme="dark"] .stButton > button {
     background: linear-gradient(to right, #60a5fa, #3b82f6);
+    color: white;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -137,6 +115,7 @@ with st.expander("ℹ️ Fee & Cohort Info"):
     </ul>
     </div>
     """, unsafe_allow_html=True)
+
 EXCEL_URL = "https://www.dropbox.com/scl/fi/qldz8wehdhzd4x05hostg/Products-with-Start-Date-Payment-Plan.xlsx?rlkey=ktap7w88dmoeohd7vwyfdwsl3&st=8v58uuiq&dl=1"
 
 try:
@@ -144,17 +123,21 @@ try:
     df.columns = df.columns.str.strip().str.lower()
     today = datetime.today()
 
+    # Parse date columns
     df["ecommerce enrollment deadline"] = pd.to_datetime(df["ecommerce enrollment deadline"], dayfirst=True, errors="coerce")
     df["course start date"] = pd.to_datetime(df["course start date"], dayfirst=True)
     df["course end date"] = pd.to_datetime(df["course end date"], dayfirst=True)
 
-    # Keep courses for 2 weeks post-deadline
+    # Keep courses for 2 weeks after enrollment deadline
     df = df[df["ecommerce enrollment deadline"] >= today - pd.Timedelta(days=14)]
+
+    # Add (Recently Closed) label if needed
     df["product name tagged"] = df.apply(
         lambda row: f"{row['product name']} (Recently Closed)" if row["ecommerce enrollment deadline"] < today else row["product name"],
         axis=1
     )
 
+    # Select course
     course_name = st.selectbox("Select a Course", df["product name tagged"].unique())
     course_data = df[df["product name tagged"] == course_name].iloc[0]
     raw_name = course_data["product name"]
@@ -166,6 +149,7 @@ try:
 
     is_flexible = "Complete SQE Prep Flexible" in raw_name
 
+    # Promo code
     apply_promo = st.checkbox("Do you have a promo code?")
     if apply_promo:
         promo_option = st.radio("Choose Discount Type:", ["Amount Off", "Percent Off"])
@@ -176,31 +160,34 @@ try:
             percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0)
             total_cost -= (percent_off / 100.0) * total_cost
 
-    # Determine available installments
+    # Determine available installments and first payment date
     if is_flexible:
-    start_month = datetime(course_start_date.year, course_start_date.month, 1)
-    
-    # Determine first payment date based on rules
-    if today < start_month:
-        first_payment_date = start_month
-    else:
-        first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
-    
-    # Reduce months starting the month *after* enrollment deadline
-    penalty_start = datetime(enrollment_deadline.year, enrollment_deadline.month, 1) + relativedelta(months=1)
-    months_since = max(0, (today.year - penalty_start.year) * 12 + today.month - penalty_start.month)
-    max_installments = max(1, 12 - months_since)
+        start_month = datetime(course_start_date.year, course_start_date.month, 1)
 
-    available_installments = list(range(1, max_installments + 1))
+        # First payment: either 1st of start month or 1st of next month
+        if today < start_month:
+            first_payment_date = start_month
+        else:
+            first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
+
+        # Start reducing months after enrollment deadline month
+        penalty_start = datetime(enrollment_deadline.year, enrollment_deadline.month, 1) + relativedelta(months=1)
+        months_since = max(0, (today.year - penalty_start.year) * 12 + today.month - penalty_start.month)
+        max_installments = max(1, 12 - months_since)
+
+        available_installments = list(range(1, max_installments + 1))
 
     else:
+        # Standard logic
         first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
         earliest_allowed_payment = course_end_date - relativedelta(months=11)
         if first_payment_date < earliest_allowed_payment:
             first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
+
         months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
         available_installments = list(range(1, min(months_until_exam, 12) + 1))
 
+    # Course info
     st.markdown("### 📅 Course Details")
     st.write(f"**Start Date:** {course_start_date.strftime('%-d %B %Y')}")
     st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')}")
@@ -211,24 +198,13 @@ try:
         num_payments = st.selectbox("Select Number of Installments", available_installments)
 
         if st.button("📊 Calculate Payment Plan"):
-            if is_flexible:
-                plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
+            plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
                 first_payment_date.strftime("%d-%m-%Y"),
                 course_end_date.strftime("%d-%m-%Y"),
                 total_cost,
                 num_payments,
                 course_start_date
-                )
-
-                )
-            else:
-                plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
-                    first_payment_date.strftime("%d-%m-%Y"),
-                    course_end_date.strftime("%d-%m-%Y"),
-                    total_cost,
-                    num_payments,
-                    course_start_date
-                )
+            )
 
             total_paid = downpayment + late_fee + (monthly_payment * num_payments)
 
@@ -248,4 +224,3 @@ try:
 
 except Exception as e:
     st.error(f"Error loading course data: {e}")
-
