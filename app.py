@@ -147,13 +147,18 @@ try:
     if all(col in df.columns for col in ["product name", "course start date", "course end date", "tuition pricing", "ecommerce enrollment deadline"]):
         today = datetime.today()
         df["ecommerce enrollment deadline"] = pd.to_datetime(df["ecommerce enrollment deadline"], dayfirst=True, errors='coerce')
-        df["expired"] = df["ecommerce enrollment deadline"] < today
+
+        # Keep all courses where enrollment deadline is in future OR up to 14 days in the past
         df = df[df["ecommerce enrollment deadline"] >= today - pd.Timedelta(days=14)].copy()
-        df["product name"] = df.apply(lambda row: f"{row['product name']} (Recently Closed)" if row["expired"] else row["product name"], axis=1)
 
-        # continue with your category filtering and selection logic...
+        # Mark recently closed courses
+        df["recently_closed"] = df["ecommerce enrollment deadline"] < today
+        df["display name"] = df.apply(
+            lambda row: f"{row['product name']} (Recently Closed)" if row["recently_closed"] else row["product name"],
+            axis=1
+        )
 
-        # (Rest of the app remains unchanged)
+        # You can now use df["display name"] in your course selection dropdown
 
 except Exception as e:
     st.error(f"Error loading course data: {e}")
