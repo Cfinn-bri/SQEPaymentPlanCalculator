@@ -147,18 +147,100 @@ try:
     if all(col in df.columns for col in ["product name", "course start date", "course end date", "tuition pricing", "ecommerce enrollment deadline"]):
         today = datetime.today()
         df["ecommerce enrollment deadline"] = pd.to_datetime(df["ecommerce enrollment deadline"], dayfirst=True, errors='coerce')
-
-        # Keep all courses where enrollment deadline is in future OR up to 14 days in the past
         df = df[df["ecommerce enrollment deadline"] >= today - pd.Timedelta(days=14)].copy()
-
-        # Mark recently closed courses
         df["recently_closed"] = df["ecommerce enrollment deadline"] < today
         df["display name"] = df.apply(
             lambda row: f"{row['product name']} (Recently Closed)" if row["recently_closed"] else row["product name"],
             axis=1
         )
 
-        # You can now use df["display name"] in your course selection dropdown
+        categories = {
+            "All Courses": df,
+            "SQE1": df[df["display name"].str.contains("SQE1", case=False, na=False)],
+            "SQE2": df[df["display name"].str.contains("SQE2", case=False, na=False)],
+            "Complete SQE": df[df["display name"].str.contains("Complete SQE", case=False, na=False)]
+        }
+
+        selected_category = st.selectbox("Select a Category", list(categories.keys()))
+        filtered_df = categories[selected_category]
+
+        search_term = st.text_input("🔍 Filter Courses (optional):").strip().lower()
+        filtered_courses = filtered_df[filtered_df["display name"].str.lower().str.contains(search_term)] if search_term else filtered_df
+
+        course_name = st.selectbox("Select a Course", filtered_courses["display name"].unique())
+        course_data = filtered_courses[filtered_courses["display name"] == course_name].iloc[0]
+
+        course_start_date = pd.to_datetime(course_data["course start date"], dayfirst=True)
+        course_end_date = pd.to_datetime(course_data["course end date"], dayfirst=True)
+        enrollment_deadline = pd.to_datetime(course_data["ecommerce enrollment deadline"], dayfirst=True)
+        total_cost = float(course_data["tuition pricing"])
+
+        apply_promo = st.checkbox("Do you have a promo code?")
+        if apply_promo:
+            promo_option = st.radio("Choose Discount Type:", ["Amount Off", "Percent Off"])
+            if promo_option == "Amount Off":
+                amount_off = st.number_input("Amount Off (£)", min_value=0.0, value=0.0)
+                total_cost -= amount_off
+            elif promo_option == "Percent Off":
+                percent_off = st.number_input("Percent Off (%)", min_value=0.0, max_value=100.0, value=0.0)
+                total_cost -= (percent_off / 100.0) * total_cost
+
+        is_flexible = "Complete SQE Prep Flexible" in course_name
+
+        if is_flexible:
+            start_month = datetime(course_start_date.year, course_start_date.month, 1)
+            if today < start_month:
+                first_payment_date = start_month
+            else:
+                first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
+
+            penalty_start = datetime(enrollment_deadline.year, enrollment_deadline.month, 1) + relativedelta(months=1)
+            months_since = max(0, (today.year - penalty_start.year) * 12 + today.month - penalty_start.month)
+            max_installments = max(1, 12 - months_since)
+        else:
+            first_payment_date = datetime(today.year, today.month, 1) + relativedelta(months=1)
+            earliest_allowed_payment = course_end_date - relativedelta(months=11)
+            if first_payment_date < earliest_allowed_payment:
+                first_payment_date = datetime(earliest_allowed_payment.year, earliest_allowed_payment.month, 1)
+
+            months_until_exam = (course_end_date.year - first_payment_date.year) * 12 + (course_end_date.month - first_payment_date.month) + 1
+            max_installments = min(12, months_until_exam)
+
+        available_installments = list(range(1, max_installments + 1))
+
+        st.markdown("### 📅 Course Details")
+        st.write(f"**Start Date:** {course_start_date.strftime('%-d %B %Y')}")
+        st.write(f"**Exam Month:** {course_end_date.strftime('%B %Y')}")
+        st.write(f"**Enrollment Deadline:** {enrollment_deadline.strftime('%-d %B %Y')}")
+        st.write(f"**Tuition Pricing:** £{total_cost:.2f}")
+
+        if available_installments:
+            num_payments = st.selectbox("Select Number of Installments", available_installments)
+
+            if st.button("📊 Calculate Payment Plan"):
+                plan, downpayment, finance_fee, late_fee, monthly_payment = calculate_payment_plan(
+                    first_payment_date.strftime("%d-%m-%Y"),
+                    course_end_date.strftime("%d-%m-%Y"),
+                    total_cost,
+                    num_payments,
+                    course_start_date
+                )
+
+                total_paid = downpayment + late_fee + (monthly_payment * num_payments)
+
+                st.markdown("### 💡 Summary")
+                st.success(f"**Downpayment:** £{downpayment:.2f}")
+                st.info(f"**Finance Fee (spread):** £{finance_fee:.2f}")
+                if late_fee:
+                    st.warning(f"**Late Fee:** £{late_fee:.2f}")
+                st.write(f"**Monthly Payment:** £{monthly_payment:.2f} × {num_payments} months")
+                st.write(f"**Total Paid:** £{total_paid:.2f}")
+
+                st.markdown("### 📅 Payment Schedule")
+                for date, amount in plan:
+                    st.markdown(f"<div class='payment-line'><strong>{date}:</strong> £{amount:.2f}</div>", unsafe_allow_html=True)
+        else:
+            st.warning("No available payment months before the exam month.")
 
 except Exception as e:
     st.error(f"Error loading course data: {e}")
