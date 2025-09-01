@@ -15,7 +15,7 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
     late_fee = 149 if today > course_start_date else 0
     finance_fee = 149
 
-    remaining_balance = total_cost - downpayment + late_fee
+    remaining_balance = total_cost - downpayment
     monthly_payment = round((remaining_balance + finance_fee) / num_payments, 2)
 
     payment_schedule = [("Immediate Downpayment", downpayment)]
