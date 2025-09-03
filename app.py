@@ -11,10 +11,12 @@ def calculate_payment_plan(first_payment_date_str, course_end_date_str, total_co
     today = datetime.today()
     course_start_month = datetime(course_start_date.year, course_start_date.month, 1)
 
-    if "Complete SQE" in course_name.lower():
+   
+if "complete sqe" in course_name.lower():
     downpayment = 500
 else:
     downpayment = 500 if today >= course_start_month else 199
+
 
     late_fee = 149 if today > course_start_date else 0
     finance_fee = 149
